@@ -1,21 +1,31 @@
-# Smart Campus Sensor & Room Management API
+# Smart Campus — Sensor & Room Management API
+
+> **Module:** 5COSC022W — Client-Server Architectures (2025/26)  
+> **Weight:** 60% of final grade | **Due:** 24 April 2026, 13:00  
+> **Technology:** JAX-RS (Jersey 2.41) deployed on Apache Tomcat 10
 
 ---
 
 ## Section 1: Overview
 
-The Smart Campus API is a RESTful web service for managing physical rooms and IoT sensors across a university campus. It exposes endpoints for creating and querying rooms, registering sensors, and recording real-time sensor readings (temperature, CO₂, occupancy, etc.).
+The **Smart Campus API** is a RESTful web service that manages the physical rooms and IoT sensors across a university campus. It exposes a versioned endpoint collection under `/api/v1/` for creating and querying rooms, registering sensors, and recording real-time sensor readings (temperature, CO₂, occupancy, etc.).
+
+The service is packaged as a standard **WAR** file and deployed to **Apache Tomcat**. Jersey acts purely as a JAX-RS servlet running inside the Tomcat servlet container — there is no embedded HTTP server such as Grizzly.
 
 ### Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Language | Java 17 |
-| JAX-RS Implementation | Jersey 2.41 (`javax.ws.rs` namespace) |
-| HTTP Server | Grizzly 2 (embedded, no servlet container required) |
-| JSON Serialisation | Jackson via `jersey-media-json-jackson` |
-| Dependency Injection | HK2 via `jersey-hk2` |
-| Build Tool | Maven 3.8+ |
+| Layer                  | Technology                                      |
+|------------------------|-------------------------------------------------|
+| Language               | Java 17                                         |
+| JAX-RS Implementation  | Jersey 2.41 (`javax.ws.rs` namespace)           |
+| Servlet Container      | Apache Tomcat 10 (external, WAR deployment)     |
+| Packaging              | WAR (`maven-war-plugin`)                        |
+| JSON Serialisation     | Jackson via `jersey-media-json-jackson`         |
+| Dependency Injection   | HK2 via `jersey-hk2`                            |
+| Build Tool             | Maven 3.8+                                      |
+| In-Memory Storage      | `ConcurrentHashMap` / `CopyOnWriteArrayList`    |
+
+> ⚠️ **No database is used.** All data lives in in-memory Java data structures for the lifetime of the server process, as required by the coursework specification.
 
 ### Design Principles
 
@@ -32,48 +42,76 @@ The Smart Campus API is a RESTful web service for managing physical rooms and Io
 
 ### Prerequisites
 
-- JDK 17 or higher (`java -version` should report `17.x` or above)
-- Maven 3.8 or higher (`mvn -version`)
+| Requirement       | Minimum Version | Check Command          |
+|-------------------|-----------------|------------------------|
+| JDK               | 17              | `java -version`        |
+| Maven             | 3.8             | `mvn -version`         |
+| Apache Tomcat     | 10.x            | —                      |
 
-### Build
+> Download Tomcat 10 from [https://tomcat.apache.org/download-10.cgi](https://tomcat.apache.org/download-10.cgi) if you do not already have it.
+
+### Step 1 — Build the WAR
 
 ```bash
 cd smartcampus
 mvn clean package
 ```
 
-This compiles all sources and packages the project. Dependencies are downloaded automatically on the first run.
+This compiles all sources and produces `target/smartcampus.war`. Maven downloads all declared dependencies automatically on the first run.
 
-### Run
+### Step 2 — Deploy to Tomcat
 
-```bash
-mvn exec:java
-```
-
-The embedded Grizzly server starts and binds to:
-
-```
-http://localhost:8080/api/v1/
-```
-
-Press `Ctrl+C` to stop. The JVM shutdown hook gracefully shuts down Grizzly before exit.
-
-### One-liner (build + run)
+Copy the WAR into Tomcat's `webapps/` directory:
 
 ```bash
-mvn clean package -q && mvn exec:java -q
+cp target/smartcampus.war $CATALINA_HOME/webapps/
 ```
+
+*(Replace `$CATALINA_HOME` with your actual Tomcat installation path, e.g. `/usr/local/tomcat` or `/opt/homebrew/opt/tomcat/libexec`.)*
+
+### Step 3 — Start Tomcat
+
+```bash
+$CATALINA_HOME/bin/startup.sh        # macOS / Linux
+%CATALINA_HOME%\bin\startup.bat      # Windows
+```
+
+Tomcat auto-deploys the WAR. The API is then available at:
+
+```
+http://localhost:8080/smartcampus/api/v1/
+```
+
+> The context path `/smartcampus` comes from the WAR file name. If you rename the WAR to `ROOT.war`, the context path becomes `/` and the base URL becomes `http://localhost:8080/api/v1/`.
+
+### Step 4 — Stop Tomcat
+
+```bash
+$CATALINA_HOME/bin/shutdown.sh       # macOS / Linux
+```
+
+### One-liner (build + copy)
+
+```bash
+mvn clean package -q && cp target/smartcampus.war $CATALINA_HOME/webapps/
+```
+
+Then start Tomcat as above.
 
 ---
 
 ## Section 3: Sample curl Commands
 
-All commands assume the server is running. Use `bash test.sh` for a scripted run (see `test.sh` in the project root).
+All commands assume the server is running and accessible at `http://localhost:8080/smartcampus`. Adjust the host/port and context path if your Tomcat configuration differs.
+
+> You can also run the bundled test script: `bash test.sh`
+
+---
 
 ### 1. Discovery — GET /api/v1/
 
 ```bash
-curl -s http://localhost:8080/api/v1/ | python3 -m json.tool
+curl -s http://localhost:8080/smartcampus/api/v1/ | python3 -m json.tool
 ```
 
 Returns the API name, version, contact, HATEOAS resource links, and a server timestamp.
@@ -83,7 +121,7 @@ Returns the API name, version, contact, HATEOAS resource links, and a server tim
 ### 2. List all rooms — GET /api/v1/rooms
 
 ```bash
-curl -s http://localhost:8080/api/v1/rooms | python3 -m json.tool
+curl -s http://localhost:8080/smartcampus/api/v1/rooms | python3 -m json.tool
 ```
 
 Returns the two seeded rooms (`LIB-301`, `LAB-101`) plus any rooms created at runtime.
@@ -93,7 +131,7 @@ Returns the two seeded rooms (`LIB-301`, `LAB-101`) plus any rooms created at ru
 ### 3. Create a room — POST /api/v1/rooms
 
 ```bash
-curl -s -X POST http://localhost:8080/api/v1/rooms \
+curl -s -X POST http://localhost:8080/smartcampus/api/v1/rooms \
   -H "Content-Type: application/json" \
   -d '{"name":"Cafeteria","capacity":120}' | python3 -m json.tool
 ```
@@ -105,7 +143,7 @@ The server generates an ID (`ROOM-XXXXXX`). Returns `201 Created` with a `Locati
 ### 4. Get a specific room — GET /api/v1/rooms/{roomId}
 
 ```bash
-curl -s http://localhost:8080/api/v1/rooms/LIB-301 | python3 -m json.tool
+curl -s http://localhost:8080/smartcampus/api/v1/rooms/LIB-301 | python3 -m json.tool
 ```
 
 Returns the room object. Returns `404 NOT_FOUND` if the ID does not exist.
@@ -115,7 +153,7 @@ Returns the room object. Returns `404 NOT_FOUND` if the ID does not exist.
 ### 5. Attempted delete of a non-empty room — 409 Conflict
 
 ```bash
-curl -i -X DELETE http://localhost:8080/api/v1/rooms/LIB-301
+curl -i -X DELETE http://localhost:8080/smartcampus/api/v1/rooms/LIB-301
 ```
 
 `LIB-301` has `TEMP-001` in its `sensorIds` list. Expected response:
@@ -130,7 +168,7 @@ HTTP/1.1 409 Conflict
 ### 6. Create sensor with invalid roomId — 422 Unprocessable Entity
 
 ```bash
-curl -i -X POST http://localhost:8080/api/v1/sensors \
+curl -i -X POST http://localhost:8080/smartcampus/api/v1/sensors \
   -H "Content-Type: application/json" \
   -d '{"type":"Humidity","roomId":"DOES-NOT-EXIST"}'
 ```
@@ -147,7 +185,7 @@ HTTP/1.1 422
 ### 7. Filter sensors by type — GET /api/v1/sensors?type=Temperature
 
 ```bash
-curl -s "http://localhost:8080/api/v1/sensors?type=Temperature" | python3 -m json.tool
+curl -s "http://localhost:8080/smartcampus/api/v1/sensors?type=Temperature" | python3 -m json.tool
 ```
 
 Returns only sensors whose `type` field matches `Temperature` (case-insensitive).
@@ -157,7 +195,7 @@ Returns only sensors whose `type` field matches `Temperature` (case-insensitive)
 ### 8. Post a reading on a MAINTENANCE sensor — 403 Forbidden
 
 ```bash
-curl -i -X POST http://localhost:8080/api/v1/sensors/CO2-007/readings \
+curl -i -X POST http://localhost:8080/smartcampus/api/v1/sensors/CO2-007/readings \
   -H "Content-Type: application/json" \
   -d '{"value":400}'
 ```
@@ -174,7 +212,7 @@ HTTP/1.1 403 Forbidden
 ### 9. Post a valid reading — POST /api/v1/sensors/{sensorId}/readings
 
 ```bash
-curl -i -X POST http://localhost:8080/api/v1/sensors/TEMP-001/readings \
+curl -i -X POST http://localhost:8080/smartcampus/api/v1/sensors/TEMP-001/readings \
   -H "Content-Type: application/json" \
   -d '{"value":24.7}'
 ```
@@ -186,7 +224,7 @@ Returns `201 Created` with server-generated `id` (UUID) and `timestamp` (epoch m
 ### 10. Get readings history — GET /api/v1/sensors/{sensorId}/readings
 
 ```bash
-curl -s http://localhost:8080/api/v1/sensors/TEMP-001/readings | python3 -m json.tool
+curl -s http://localhost:8080/smartcampus/api/v1/sensors/TEMP-001/readings | python3 -m json.tool
 ```
 
 Returns all readings for `TEMP-001` sorted by `timestamp` descending (most recent first).
@@ -289,7 +327,7 @@ Returning `404` in this situation would be misleading in two ways. First, it con
 
 Exposing raw stack traces or exception detail in HTTP error responses constitutes an **information disclosure vulnerability**, catalogued under OWASP Top 10 A05:2021 (Security Misconfiguration) and A09:2021 (Security Logging and Monitoring Failures).
 
-A stack trace leaks several categories of sensitive information that an attacker can exploit directly. **Framework and library versions** (e.g., `org.glassfish.jersey 2.41`, `Grizzly 2.4.4`) enable targeted lookup of known CVEs against those exact versions. **Internal package structure** (`com.westminster.smartcampus.store.RoomStore`) reveals the application's architecture and aids in constructing targeted payloads. **File system paths** embedded in class-loading errors can hint at directory structures useful for path traversal attacks. **Database driver class names** (if present) reveal the persistence technology and version. **Line numbers** pinpoint exactly which line of code failed, allowing an attacker to craft inputs that reproducibly trigger the same exception — invaluable when probing for deserialization gadget chains or SQL injection points.
+A stack trace leaks several categories of sensitive information that an attacker can exploit directly. **Framework and library versions** (e.g., `org.glassfish.jersey 2.41`) enable targeted lookup of known CVEs against those exact versions. **Internal package structure** (`com.westminster.smartcampus.store.RoomStore`) reveals the application's architecture and aids in constructing targeted payloads. **File system paths** embedded in class-loading errors can hint at directory structures useful for path traversal attacks. **Database driver class names** (if present) reveal the persistence technology and version. **Line numbers** pinpoint exactly which line of code failed, allowing an attacker to craft inputs that reproducibly trigger the same exception — invaluable when probing for deserialization gadget chains or injection points.
 
 Our `GenericThrowableMapper` addresses this by logging the full exception server-side (with a `requestId` for correlation) while returning only a safe, opaque message to the client. The `requestId` allows support teams to retrieve the full diagnostic information from server logs without exposing it externally.
 
@@ -314,43 +352,81 @@ This is the same rationale behind Aspect-Oriented Programming (AOP) and servlet 
 ## Section 5: Project Structure
 
 ```
-src/main/java/com/westminster/smartcampus/
+smartcampus/
 │
-├── Main.java                          Entry point — starts Grizzly, registers shutdown hook
-├── RestApplication.java               JAX-RS Application subclass — explicit class registry
+├── pom.xml                            Maven build — WAR packaging, Jersey 2.41 deps
 │
-├── model/
-│   ├── Room.java                      POJO: id, name, capacity, sensorIds
-│   ├── Sensor.java                    POJO: id, type, status, currentValue, roomId
-│   └── SensorReading.java             POJO: id, timestamp, value
-│
-├── store/
-│   ├── RoomStore.java                 Singleton ConcurrentHashMap<String, Room>
-│   ├── SensorStore.java               Singleton ConcurrentHashMap<String, Sensor>
-│   └── SensorReadingStore.java        Singleton ConcurrentHashMap<String, CopyOnWriteArrayList<SensorReading>>
-│
-├── resource/
-│   ├── DiscoveryResource.java         GET /api/v1/ — HATEOAS discovery endpoint
-│   ├── SensorRoomResource.java        GET|POST /rooms, GET|DELETE /rooms/{roomId}
-│   ├── SensorResource.java            GET|POST /sensors, GET /sensors/{id}, sub-resource locator
-│   └── SensorReadingResource.java     GET|POST /sensors/{sensorId}/readings (sub-resource, not root)
-│
-├── exception/
-│   ├── RoomNotFoundException.java     Thrown when a roomId is not in RoomStore
-│   ├── RoomNotEmptyException.java     Thrown on DELETE when room still has sensors
-│   ├── SensorNotFoundException.java   Thrown when a sensorId is not in SensorStore
-│   ├── SensorUnavailableException.java Thrown on POST reading when sensor is MAINTENANCE/OFFLINE
-│   └── LinkedResourceNotFoundException.java Thrown when a foreign-key reference (roomId) is invalid
-│
-├── mapper/
-│   ├── RoomNotFoundExceptionMapper.java          → 404 NOT_FOUND
-│   ├── SensorNotFoundExceptionMapper.java        → 404 NOT_FOUND
-│   ├── RoomNotEmptyExceptionMapper.java          → 409 ROOM_NOT_EMPTY
-│   ├── LinkedResourceNotFoundExceptionMapper.java → 422 LINKED_RESOURCE_NOT_FOUND
-│   ├── SensorUnavailableExceptionMapper.java     → 403 SENSOR_UNAVAILABLE
-│   ├── NotFoundMapper.java                       → 404 for unmatched JAX-RS routes
-│   └── GenericThrowableMapper.java               → 500 catch-all, logs full trace server-side
-│
-└── filter/
-    └── LoggingFilter.java             Request+response logger; injects requestId and elapsed time
+└── src/main/
+    ├── webapp/
+    │   ├── META-INF/context.xml       Tomcat context descriptor
+    │   └── WEB-INF/web.xml            Servlet mapping: Jersey ServletContainer → /api/v1/*
+    │
+    └── java/com/westminster/smartcampus/
+        │
+        ├── RestApplication.java       JAX-RS Application subclass — explicit class registry
+        │                              (@ApplicationPath("/api/v1") registered in web.xml)
+        │
+        ├── model/
+        │   ├── Room.java              POJO: id, name, capacity, sensorIds
+        │   ├── Sensor.java            POJO: id, type, status, currentValue, roomId
+        │   └── SensorReading.java     POJO: id, timestamp, value
+        │
+        ├── store/
+        │   ├── RoomStore.java         Singleton ConcurrentHashMap<String, Room>
+        │   ├── SensorStore.java       Singleton ConcurrentHashMap<String, Sensor>
+        │   └── SensorReadingStore.java  Singleton ConcurrentHashMap<String, CopyOnWriteArrayList<SensorReading>>
+        │
+        ├── resource/
+        │   ├── DiscoveryResource.java    GET /api/v1/ — HATEOAS discovery endpoint
+        │   ├── SensorRoomResource.java   GET|POST /rooms, GET|DELETE /rooms/{roomId}
+        │   ├── SensorResource.java       GET|POST /sensors, GET /sensors/{id}, sub-resource locator
+        │   └── SensorReadingResource.java  GET|POST /sensors/{sensorId}/readings (sub-resource, not root)
+        │
+        ├── exception/
+        │   ├── RoomNotFoundException.java
+        │   ├── RoomNotEmptyException.java
+        │   ├── SensorNotFoundException.java
+        │   ├── SensorUnavailableException.java
+        │   └── LinkedResourceNotFoundException.java
+        │
+        ├── mapper/
+        │   ├── RoomNotFoundExceptionMapper.java          → 404 NOT_FOUND
+        │   ├── SensorNotFoundExceptionMapper.java        → 404 NOT_FOUND
+        │   ├── RoomNotEmptyExceptionMapper.java          → 409 ROOM_NOT_EMPTY
+        │   ├── LinkedResourceNotFoundExceptionMapper.java → 422 LINKED_RESOURCE_NOT_FOUND
+        │   ├── SensorUnavailableExceptionMapper.java     → 403 SENSOR_UNAVAILABLE
+        │   ├── NotFoundMapper.java                       → 404 for unmatched JAX-RS routes
+        │   └── GenericThrowableMapper.java               → 500 catch-all, logs full trace server-side
+        │
+        └── filter/
+            └── LoggingFilter.java     ContainerRequestFilter + ContainerResponseFilter;
+                                       logs method, URI, status, and elapsed time per request
 ```
+
+---
+
+## Section 6: Mark Breakdown & Deliverables
+
+| Component                      | Marks |
+|--------------------------------|-------|
+| Part 1 — Setup & Discovery     | 10    |
+| Part 2 — Room Management       | 20    |
+| Part 3 — Sensors & Filtering   | 20    |
+| Part 4 — Sub-Resources         | 20    |
+| Part 5 — Error Handling & Logging | 30 |
+| **Total**                      | **100** |
+
+Each section is split as follows: **50% coding**, **30% video demonstration**, **20% written report questions** (this README).
+
+### Submission Checklist
+
+- [x] Public GitHub repository containing this README
+- [ ] Video demonstration (max 10 min) uploaded to Blackboard — must show Postman tests; presenter must be visible and audible on camera
+- [ ] Report answers embedded in this README (Sections 4 above)
+- [ ] Submit Blackboard link — **no ZIP files accepted**
+
+### Coursework Constraints (Automatic Zero if Violated)
+
+- ✅ Only **JAX-RS** used (no Spring Boot or other frameworks)
+- ✅ No database — all data stored in `HashMap` / `ArrayList` variants only
+- ✅ Project hosted on GitHub (not submitted as a ZIP)
