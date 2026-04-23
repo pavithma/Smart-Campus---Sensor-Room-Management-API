@@ -1,0 +1,432 @@
+{
+  "info": {
+    "name": "Smart Campus Sensor & Room Management API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "description": "JAX-RS coursework collection. Set the `base` collection variable before running. All requests target the Apache Tomcat server."
+  },
+  "variable": [
+    {
+      "key": "base",
+      "value": "http://localhost:8080/smartcampus/api/v1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Part 1 - Discovery",
+      "item": [
+        {
+          "name": "GET discovery",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                ""
+              ]
+            },
+            "description": "Part 1.1 / 1.2 — Root discovery endpoint. Returns API name, version, contact, HATEOAS resource links, and a server timestamp. Demonstrates the @ApplicationPath and @Path(\"/\") root resource."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Part 2 - Rooms",
+      "item": [
+        {
+          "name": "GET all rooms",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/rooms",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "rooms"
+              ]
+            },
+            "description": "Part 2.1 — List all rooms. Returns the full collection from the in-memory RoomStore including seeded rooms LIB-301 and LAB-101."
+          }
+        },
+        {
+          "name": "POST create room",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cafeteria\",\n  \"capacity\": 120\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base}}/rooms",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "rooms"
+              ]
+            },
+            "description": "Part 2.1 — Create a new room. The server generates an id (ROOM-XXXXXX) when none is supplied. Returns 201 Created with a Location header."
+          }
+        },
+        {
+          "name": "GET room by id (LIB-301)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/rooms/LIB-301",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "rooms",
+                "LIB-301"
+              ]
+            },
+            "description": "Part 2.1 — Fetch a single room by id. Returns 200 with the Room JSON. Returns 404 NOT_FOUND if the id does not exist."
+          }
+        },
+        {
+          "name": "DELETE room with sensors (expect 409)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/rooms/LIB-301",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "rooms",
+                "LIB-301"
+              ]
+            },
+            "description": "Part 2.2 — Attempt to delete LIB-301 which still has TEMP-001 in its sensorIds list. Expect 409 Conflict with error ROOM_NOT_EMPTY and a hint to reassign sensors first."
+          }
+        },
+        {
+          "name": "POST create empty room (for delete test)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Temp Room\",\n  \"capacity\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base}}/rooms",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "rooms"
+              ]
+            },
+            "description": "Part 2.2 — Create a room with no sensors so it can be cleanly deleted. Copy the returned id into the delete request below."
+          }
+        },
+        {
+          "name": "DELETE empty room (expect 204)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/rooms/ROOM-REPLACE",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "rooms",
+                "ROOM-REPLACE"
+              ]
+            },
+            "description": "Part 2.2 — Delete an empty room (no sensors). Expect 204 No Content. Replace ROOM-REPLACE with the id returned from the create request above. A second call returns 404, demonstrating idempotent server state."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Part 3 - Sensors",
+      "item": [
+        {
+          "name": "GET all sensors",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/sensors",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "sensors"
+              ]
+            },
+            "description": "Part 3.1 / 3.2 — List all sensors with no filter applied. Returns the full collection including seeded TEMP-001 and CO2-007."
+          }
+        },
+        {
+          "name": "GET sensors filtered by type",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/sensors?type=Temperature",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "sensors"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "Temperature"
+                }
+              ]
+            },
+            "description": "Part 3.2 — Filter the sensor collection by type using a @QueryParam. Returns only sensors whose type matches case-insensitively. Try type=CO2 to see CO2-007."
+          }
+        },
+        {
+          "name": "POST create sensor (valid)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"Humidity\",\n  \"roomId\": \"LIB-301\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base}}/sensors",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "sensors"
+              ]
+            },
+            "description": "Part 3.1 — Create a new sensor linked to an existing room. The server generates a SENS-XXXXXX id, defaults status to ACTIVE, and adds the sensor id to the parent room's sensorIds list. Returns 201 Created."
+          }
+        },
+        {
+          "name": "POST create sensor with bad roomId (expect 422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"Pressure\",\n  \"roomId\": \"DOES-NOT-EXIST\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base}}/sensors",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "sensors"
+              ]
+            },
+            "description": "Part 3.1 / Part 5.2 — Attempt to create a sensor referencing a roomId that does not exist. The endpoint is valid (no routing error) but the payload is semantically invalid, so the server returns 422 Unprocessable Entity with error LINKED_RESOURCE_NOT_FOUND rather than 404."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Part 4 - Readings",
+      "item": [
+        {
+          "name": "POST reading to TEMP-001 (valid)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"value\": 24.7\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base}}/sensors/TEMP-001/readings",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "sensors",
+                "TEMP-001",
+                "readings"
+              ]
+            },
+            "description": "Part 4.1 — Post a new reading via the sub-resource locator. The server ignores any client-supplied id or timestamp and generates both server-side (UUID + epoch ms). Also updates the parent sensor's currentValue. Returns 201 Created."
+          }
+        },
+        {
+          "name": "GET readings for TEMP-001",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/sensors/TEMP-001/readings",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "sensors",
+                "TEMP-001",
+                "readings"
+              ]
+            },
+            "description": "Part 4.1 — Retrieve all readings for TEMP-001 sorted by timestamp descending (most recent first). Includes the two seeded readings plus any posted during this session."
+          }
+        },
+        {
+          "name": "POST reading to CO2-007 (expect 403 - MAINTENANCE)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"value\": 400\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base}}/sensors/CO2-007/readings",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "sensors",
+                "CO2-007",
+                "readings"
+              ]
+            },
+            "description": "Part 4.1 / Part 5 — CO2-007 is seeded with status MAINTENANCE. The server throws SensorUnavailableException which is mapped to 403 Forbidden with error SENSOR_UNAVAILABLE. No reading is persisted."
+          }
+        },
+        {
+          "name": "GET TEMP-001 (verify currentValue updated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/sensors/TEMP-001",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "sensors",
+                "TEMP-001"
+              ]
+            },
+            "description": "Part 4.1 — Fetch TEMP-001 after posting a reading. The currentValue field should reflect the value from the most recently posted reading, confirming the side-effect update."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Part 5 - Errors",
+      "item": [
+        {
+          "name": "GET non-existent room (expect 404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/rooms/GHOST",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "rooms",
+                "GHOST"
+              ]
+            },
+            "description": "Part 5 — Request a room id that does not exist. RoomNotFoundException is thrown and mapped by RoomNotFoundExceptionMapper to 404 Not Found with a consistent JSON error body {error: NOT_FOUND, resource: Room, id: GHOST}."
+          }
+        },
+        {
+          "name": "GET unmatched route (expect 404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/nonexistent",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "nonexistent"
+              ]
+            },
+            "description": "Part 5 — Request a URI that does not match any registered resource. Jersey raises NotFoundException which is caught by NotFoundMapper and returned as 404 with JSON {error: NOT_FOUND, message: No resource at this URI, path: ...} instead of Jersey's default HTML error page."
+          }
+        }
+      ]
+    }
+  ]
+}
