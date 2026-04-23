@@ -402,31 +402,3 @@ smartcampus/
             └── LoggingFilter.java     ContainerRequestFilter + ContainerResponseFilter;
                                        logs method, URI, status, and elapsed time per request
 ```
-
----
-
-## Section 6: Mark Breakdown & Deliverables
-
-| Component                      | Marks |
-|--------------------------------|-------|
-| Part 1 — Setup & Discovery     | 10    |
-| Part 2 — Room Management       | 20    |
-| Part 3 — Sensors & Filtering   | 20    |
-| Part 4 — Sub-Resources         | 20    |
-| Part 5 — Error Handling & Logging | 30 |
-| **Total**                      | **100** |
-
-Each section is split as follows: **50% coding**, **30% video demonstration**, **20% written report questions** (this README).
-
-### Submission Checklist
-
-- [x] Public GitHub repository containing this README
-- [ ] Video demonstration (max 10 min) uploaded to Blackboard — must show Postman tests; presenter must be visible and audible on camera
-- [ ] Report answers embedded in this README (Sections 4 above)
-- [ ] Submit Blackboard link — **no ZIP files accepted**
-
-### Coursework Constraints (Automatic Zero if Violated)
-
-- ✅ Only **JAX-RS** used (no Spring Boot or other frameworks)
-- ✅ No database — all data stored in `HashMap` / `ArrayList` variants only
-- ✅ Project hosted on GitHub (not submitted as a ZIP)
