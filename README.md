@@ -6,22 +6,15 @@
 
 ---
 
-## Student Details
-
 - **Name:** Pavithma Madushni Fernando  
 - **IIT Number:** 20240349  
 - **UOW Number:** W2121211  
 
 ---
 
-## Video Demonstration & Conceptual Report
+## [Video Demonstration](https://drive.google.com/file/d/1iIrCwZ4yRHey5oOj_T612dWdLUcXNo_h/view?usp=sharing) 
 
-## Video Demonstration  
-
-
----
-
-## Conceptual Report
+## [Conceptual Report](https://drive.google.com/file/d/1WzQYTJiuBt52dY81YqTfRdf6vtsdm263/view?usp=sharing)
 
 ---
 
