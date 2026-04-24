@@ -19,9 +19,9 @@ Informatics Institute of Technology - University of Westminster
 
 ## Section 1: Overview
 
-The **Smart Campus API** is a RESTful web service that manages the physical rooms and IoT sensors across a university campus. It exposes a versioned endpoint collection under `/api/v1/` for creating and querying rooms, registering sensors, and recording real-time sensor readings (temperature, CO₂, occupancy, etc.).
+The **Smart Campus API** is a RESTful web service that manages the physical rooms and IoT sensors across a university campus. It exposes a versioned endpoint collection under `/api/v1/` for creating and querying rooms, registering sensors, and recording real-time sensor readings (temperature, CO2, occupancy, etc.).
 
-The service is packaged as a standard **WAR** file and deployed to **Apache Tomcat**. Jersey acts purely as a JAX-RS servlet running inside the Tomcat servlet container — there is no embedded HTTP server such as Grizzly.
+The service is packaged as a standard **WAR** file and deployed to **Apache Tomcat**. Jersey acts purely as a JAX-RS servlet running inside the Tomcat servlet container - there is no embedded HTTP server such as Grizzly.
 
 ### Tech Stack
 
@@ -36,16 +36,16 @@ The service is packaged as a standard **WAR** file and deployed to **Apache Tomc
 | Build Tool             | Maven 3.8+                                      |
 | In-Memory Storage      | `ConcurrentHashMap` / `CopyOnWriteArrayList`    |
 
-> ⚠️ **No database is used.** All data lives in in-memory Java data structures for the lifetime of the server process, as required by the coursework specification.
+**No database is used.** All data lives in in-memory Java data structures for the lifetime of the server process, as required by the coursework specification.
 
 ### Design Principles
 
-- **Resource-oriented design** — every URI identifies a noun, not a verb.
-- **Consistent error shape** — every non-2xx response returns a JSON object with an `error` code and a human-readable `message`, never an HTML page or a raw stack trace.
-- **Application-scoped, thread-safe stores** — all shared state lives in singleton `ConcurrentHashMap` instances, never in resource-class fields.
-- **Sub-resource locator pattern** — `SensorReadingResource` is not a root resource; it is instantiated by a locator method on `SensorResource`, enforcing the parent-child hierarchy at the routing layer.
-- **Centralised cross-cutting concerns** — request/response logging and exception mapping are handled by `@Provider`-annotated filters and mappers, not inline in resource methods.
-- **HATEOAS discovery** — the root `/api/v1/` endpoint exposes all resource URIs and supported methods so clients do not need to hardcode paths.
+- **Resource-oriented design** - every URI identifies a noun, not a verb.
+- **Consistent error shape** - every non-2xx response returns a JSON object with an `error` code and a human-readable `message`, never an HTML page or a raw stack trace.
+- **Application-scoped, thread-safe stores** - all shared state lives in singleton `ConcurrentHashMap` instances, never in resource-class fields.
+- **Sub-resource locator pattern** - `SensorReadingResource` is not a root resource; it is instantiated by a locator method on `SensorResource`, enforcing the parent-child hierarchy at the routing layer.
+- **Centralised cross-cutting concerns** - request/response logging and exception mapping are handled by `@Provider`-annotated filters and mappers, not inline in resource methods.
+- **HATEOAS discovery** - the root `/api/v1/` endpoint exposes all resource URIs and supported methods so clients do not need to hardcode paths.
 
 ---
 
