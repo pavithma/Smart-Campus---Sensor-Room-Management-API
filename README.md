@@ -1,8 +1,27 @@
-# Smart Campus — Sensor & Room Management API
+# Smart Campus - Sensor & Room Management API
 
-> **Module:** 5COSC022W — Client-Server Architectures (2025/26)  
-> **Weight:** 60% of final grade | **Due:** 24 April 2026, 13:00  
-> **Technology:** JAX-RS (Jersey 2.41) deployed on Apache Tomcat 10
+**Module:** 5COSC022W Client-Server Architectures (2025/26)  
+**University:** University of Westminster  
+**School:** School of Computer Science and Engineering  
+
+---
+
+## Student Details
+
+- **Name:** Pavithma Madushni Fernando  
+- **IIT Number:** 20240349  
+- **UOW Number:** W2121211  
+
+---
+
+## Video Demonstration & Conceptual Report
+
+## Video Demonstration  
+
+
+---
+
+## Conceptual Report
 
 ---
 
